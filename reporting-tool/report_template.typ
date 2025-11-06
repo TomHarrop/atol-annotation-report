@@ -79,5 +79,3 @@ available at {url}.
   fill: (_, row) => if calc.odd(row) { luma(240) } else { luma(220) },
   stroke: none
 )
-
-
