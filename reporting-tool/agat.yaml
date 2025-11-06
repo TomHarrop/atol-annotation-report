@@ -1,0 +1,75 @@
+---
+transcript:
+  isoform: no
+  without_isoforms:
+    value:
+      90 percentile cds length (bp): 1055
+      90 percentile cds piece length (bp): 1055
+      90 percentile exon length (bp): 1055
+      90 percentile gene length (bp): 2092
+      90 percentile intron in cds length (bp): 4203
+      90 percentile intron in exon length (bp): 4203
+      90 percentile intron in intron length (bp): 411
+      90 percentile intron length (bp): 4203
+      90 percentile transcript length (bp): 2092
+      Longest cds (bp): 6429
+      Longest cds piece (bp): 3851
+      Longest exon (bp): 3851
+      Longest gene (bp): 176339
+      Longest intron (bp): 59934
+      Longest intron into cds part (bp): 59934
+      Longest intron into exon part (bp): 59934
+      Longest intron into intron part (bp): 3552
+      Longest transcript (bp): 176339
+      Number gene overlapping: 5
+      Number of cds: 4878
+      Number of exon: 7764
+      Number of exon in cds: 7764
+      Number of gene: 4878
+      Number of intron: 2886
+      Number of intron in cds: 2886
+      Number of intron in exon: 2886
+      Number of intron in intron: 1014
+      Number of single exon gene: 3006
+      Number of single exon transcript: 3006
+      Number of transcript: 4878
+      Shortest cds piece (bp): 3
+      Shortest gene (bp): 201
+      Shortest intron into cds part (bp): 1
+      Shortest intron into exon part (bp): 1
+      Shortest intron into intron part (bp): 4
+      Shortest transcript (bp): 201
+      Total cds length (bp): 3683592
+      Total exon length (bp): 3683592
+      Total gene length (bp): 9035795
+      Total intron length (bp): 5352203
+      Total intron length per cds (bp): 5352203
+      Total intron length per exon (bp): 5352203
+      Total intron length per intron (bp): 216469
+      Total transcript length (bp): 9035795
+      mean cds length (bp): 755.143911439114
+      mean cds piece length (bp): 474.44513137558
+      mean cdss per transcript: 1.0
+      mean exon length (bp): 474.44513137558
+      mean exons per cds: 1.6
+      mean exons per transcript: 1.6
+      mean gene length (bp): 1852.35649856499
+      mean intron in cds length (bp): 1854.54019404019
+      mean intron in exon length (bp): 1854.54019404019
+      mean intron in intron length (bp): 213.480276134122
+      mean intron length (bp): 1854.54019404019
+      mean introns in cdss per transcript: 0.6
+      mean introns in exons per transcript: 0.6
+      mean introns in introns per transcript: 0.2
+      mean introns per transcript: 0.6
+      mean transcript length (bp): 1852.35649856499
+      mean transcripts per gene: 1.0
+      median cds length (bp): 372
+      median cds piece length (bp): 372
+      median exon length (bp): 372
+      median gene length (bp): 747
+      median intron in cds length (bp): 197.5
+      median intron in exon length (bp): 197.5
+      median intron in intron length (bp): 140
+      median intron length (bp): 197.5
+      median transcript length (bp): 747
