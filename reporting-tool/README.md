@@ -1,8 +1,8 @@
 # FAIR metadata annotation reporting tool
 
-We want to create a simple report tool for annotators that have created annotation and are about to upload it to e.g. ENA.
+We created a simple reporting tool for annotators that have created annotation and are about to upload it to e.g. ENA.
 
-We assume that they have metadata according to the schema that is being worked on in another work track in our project
+We assume that they have metadata according to the schema that is being worked on in another work track in our project.
 
 This tool is aimed at single researchers and small institutions.
 
@@ -33,13 +33,13 @@ path.
 
 git clone this repo, then from this directory, run:
 
-    reporter.pl -m metadata.json -a agat.yml -b busco.json
+    reporter.pl -m metadata.json -a agat.yaml -b  busco_short_summary.json
 
-This should produce a report.pdf output file.
+This should produce a report_main.json and a report.pdf output file.
 
 # How to run with Docker
 
-Build the Docker file from the git root directory like this:
+Build the Docker file like this:
 
     docker build --tag=reporter .
 
@@ -59,7 +59,7 @@ Now you would run it like this:
 
 # TODO
 
-- Notes on how to run the tools to produce the right output in the right format.
-    AGAT, Busco, etc.
+- We should add notes on how to run the tools (AGAT, Busco etc.) to produce the
+    right output in the right format.
     We assume that this repo will have a pipeline (e.g. nextflow) in the future
     to provide this.
