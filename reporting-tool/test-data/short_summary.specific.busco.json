@@ -1,0 +1,66 @@
+{
+    "parameters": {
+        "out_path": ".snakemake/shadow/tmp9rp1syb3",
+        "cpu": "11",
+        "force": "True",
+        "restart": "False",
+        "quiet": "False",
+        "download_path": ".snakemake/shadow/tmp9rp1syb3/busco_downloads",
+        "datasets_version": "odb10",
+        "offline": "True",
+        "download_base_url": "https://busco-data.ezlab.org/v5/data/",
+        "auto-lineage": "False",
+        "auto-lineage-prok": "False",
+        "auto-lineage-euk": "False",
+        "use_augustus": "False",
+        "use_miniprot": "False",
+        "use_metaeuk": "False",
+        "skip_bbtools": "False",
+        "batch_mode": "False",
+        "tar": "False",
+        "opt-out-run-stats": "False",
+        "in": ".snakemake/shadow/tmp9rp1syb3/test-output/biocontainer/braker/proteins.faa",
+        "out": "test-output/biocontainer/braker/busco",
+        "mode": "proteins",
+        "lineage_dataset": "test-data/busco/lineages/embryophyta_odb10",
+        "main_out": "test-output/biocontainer/braker/busco",
+        "lineage_results_dir": "run_embryophyta_odb10",
+        "domain": "eukaryota",
+        "orthodb_version": "10.1"
+    },
+    "lineage_dataset": {
+        "name": "embryophyta_odb10",
+        "creation_date": "2024-01-08",
+        "number_of_buscos": "1614",
+        "number_of_species": "50"
+    },
+    "versions": {
+        "hmmsearch": 3.4,
+        "python": [
+            3,
+            12,
+            12,
+            "final",
+            0
+        ],
+        "busco": "5.8.3"
+    },
+    "results": {
+        "one_line_summary": "C:1.1%[S:1.0%,D:0.1%],F:0.2%,M:98.7%,n:1614",
+        "Complete percentage": 1.1,
+        "Complete BUSCOs": 18,
+        "Single copy percentage": 1.0,
+        "Single copy BUSCOs": 16,
+        "Multi copy percentage": 0.1,
+        "Multi copy BUSCOs": 2,
+        "Fragmented percentage": 0.2,
+        "Fragmented BUSCOs": 3,
+        "Missing percentage": 98.7,
+        "Missing BUSCOs": 1593,
+        "n_markers": 1614,
+        "avg_identity": null,
+        "domain": "eukaryota",
+        "internal_stop_codon_count": 0,
+        "internal_stop_codon_percent": 0
+    }
+}

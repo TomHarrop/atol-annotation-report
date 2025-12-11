@@ -4,10 +4,10 @@
 # it takes a metadata json file, an agat yaml file, and a busco json file.
 # this script parses and maps their content to fields in the annotation schema.
 # the output is dumped into json_report.json.
-# the json is used to populate the atol_report_template.typ during typst rendering.
+# the json is used to populate the full_report_template.typ during typst rendering.
 # this generates a test-output.pdf
 
-# this script simutaneously collects a subset ofdata for atol in atol_report.json.
+# this script simutaneously collects a subset of data for atol in atol_report.json.
 # atol_report.json contains an object which can be fed straight into the genome-note-lite pipeline.
 
 import json
@@ -19,27 +19,25 @@ argument_parser = argparse.ArgumentParser(description="This tool generates a JSO
 argument_parser.add_argument("-m", "--metadata_file", help="a JSON file containing metadata according to the Annotation Metadata Schema")
 argument_parser.add_argument("-a", "--agat_file", help="a YAML file generated as output from an AGAT analysis on your annotation file")
 argument_parser.add_argument("-b", "--busco_file", help="a JSON file generated as output from a BUSCO analysis on your annotation file")
+argument_parser.add_argument("-om", "--omark_file", help="a ? file generated as output from an OMArk analysis on your annotation file")
 argument_parser.add_argument("-o", "--output_file", help="your desired report file address for the output PDF report")
 args = argument_parser.parse_args()
 
-json_atol_report = "reporting-tool/dev/atol_report.json"
-json_full_report = "reporting-tool/dev/json_report.json"
-path_to_template = "reporting-tool/atol_report_template.typ"
+json_atol_report = "reporting-tool/results/atol_report.json"
+json_full_report = "reporting-tool/results/json_report.json"
+path_to_template = "reporting-tool/full_report_template.typ"
 
 if args.output_file:
     output_pdf = args.output_file
 else:
-    output_pdf = "reporting-tool/dev/full_report.pdf"
+    output_pdf = "reporting-tool/results/full_report.pdf"
 
 # this dictionary will contain a json "annotation" object which can be inserted into the atol genome-note-lite input.
 stats_for_gnl = {}
 
-# TODO: review metadata.json and update to newer terms
-
 if args.metadata_file:
     path_to_metadata = args.metadata_file
     print("Parsing metadata")
-
     with open(path_to_metadata, "rt") as f:
         metadata_input = json.load(f)
         all_metadata = {}
@@ -53,10 +51,10 @@ else:
 
 if args.agat_file:
     path_to_agat = args.agat_file
-
     # define mappings from agat yaml input to annotation schema fields
     key_agat_mappings = {
         'gene_count':'Number of gene',
+        'cds_count':'Number of cds',
         'transcript_count':'Number of transcript',
         'mean_transcript_length':'mean transcript length (bp)',
         'mean_transcripts_per_gene':'mean transcripts per gene',
@@ -70,7 +68,6 @@ if args.agat_file:
         'total_transcript_length':'Total transcript length (bp)'
     }
     full_stat_agat_mappings = {
-        'cds_count':'Number of cds',
         'intron_count':'Number of intron',
         'single_exon_gene_count':'Number of single exon gene',
         'single_exon_transcript_count':'Number of single exon transcript'
@@ -103,17 +100,33 @@ if args.agat_file:
         'total_exon_length':'Total exon length (bp)',
         'total_intron_length':'Total intron length (bp)'
     }
-
     # TODO: parse and map AGAT software version and add to key_agat_mappings
-
     # parse AGAT yaml and map to new field names
     print("Parsing AGAT file")
-
     with open(path_to_agat, "rt") as f:
         key_agat_stats = {}
         all_agat_stats = {}
         full_agat_input = yaml.load(f, Loader=yaml.SafeLoader)
-        agat_stats_input = full_agat_input['transcript']['without_isoforms']['value']
+        if "transcript" in full_agat_input:
+            transcript_stats = full_agat_input['transcript']
+            key_agat_stats['feature_stats_calculated_for'] = 'transcripts (without isoforms)'
+            if "without_isoforms" in transcript_stats:
+                agat_stats_input = transcript_stats['without_isoforms']['value']
+            elif "without_isoform" in transcript_stats:
+                agat_stats_input = transcript_stats['without_isoform']['value']
+            else:
+                print("AGAT stats for transcripts without isoform not found, looking for stats for mRNAs")
+        elif "mrna" in full_agat_input:
+            mrna_stats = full_agat_input['mrna']
+            key_agat_stats['feature_stats_calculated_for'] = 'mRNAs (without isoforms)'
+            if "without_isoforms" in mrna_stats:
+                agat_stats_input = mrna_stats['without_isoforms']['value']
+            elif "without_isoform" in mrna_stats:
+                agat_stats_input = mrna_stats['without_isoform']['value']
+            else:
+                print("AGAT stats mRNAs without isoform stats not found")
+        else:
+            print("error: no transcript or mRNA stats detected in AGAT yaml file")
         for reporting_field, agat_field in key_agat_mappings.items():
             key_agat_stats[reporting_field] = agat_stats_input[agat_field]
         all_agat_stats.update(key_agat_stats)
@@ -129,9 +142,7 @@ if args.agat_file:
             all_agat_stats[reporting_field] = agat_stats_input[agat_field]
         for reporting_field, agat_field in length_agat_mappings.items():
             all_agat_stats[reporting_field] = agat_stats_input[agat_field]
-
     agat_output = {'agat':all_agat_stats}
-
     stats_for_gnl.update(key_agat_stats)
 else:
     print("No AGAT file specified")
@@ -139,7 +150,6 @@ else:
 
 if args.busco_file:
     path_to_busco = args.busco_file
-
     # define mappings from BUSCO json input to annotation schema fields
     parameter_busco_mappings = {
         'mode':'mode',
@@ -151,15 +161,12 @@ if args.busco_file:
     version_busco_mappings = {
         'version_busco':'busco',
         'version_hmmsearch':'hmmsearch',
-        'version_metaeuk':'metaeuk'
+        'version_metaeuk':'metaeuk',
+        'version_augustus':'augustus',
+        'version_miniprot':'miniprot'
     }
     result_busco_mappings = {
         'one_line_summary':'one_line_summary',
-        'complete_percent':'Complete',
-        'single_copy_percent':'Single copy',
-        'duplicated_percent':'Multi copy',
-        'fragmented_percent':'Fragmented',
-        'missing_percent':'Missing',
         'n_markers':'n_markers',
         'domain':'domain'
     }
@@ -167,12 +174,11 @@ if args.busco_file:
     key_busco_mappings = {
         'annot_busco_mode':'mode',
         'annot_busco_lineage':'lineage_name',
-        'annot_busco_summary':'one_line_summary'
+        'annot_busco_summary':'one_line_summary',
+        'annot_busco_version':'version_busco'
     }
-
     # parse BUSCO json and map to new field names
     print("Parsing BUSCO file")
-
     with open(path_to_busco, "rt") as f:
         key_busco_stats = {}
         all_busco_stats = {}
@@ -182,30 +188,111 @@ if args.busco_file:
         busco_version_info = all_busco_input['versions']
         busco_result_info = all_busco_input['results']
         for reporting_field, busco_field in parameter_busco_mappings.items():
-            all_busco_stats[reporting_field] = busco_param_info[busco_field]
+            if busco_field in busco_param_info:
+                all_busco_stats[reporting_field] = busco_param_info[busco_field]
         for reporting_field, busco_field in lineage_busco_mappings.items():
             all_busco_stats[reporting_field] = busco_lineage_info[busco_field]
         for reporting_field, busco_field in version_busco_mappings.items():
-            all_busco_stats[reporting_field] = busco_version_info[busco_field]
-        for reporting_field, busco_field in result_busco_mappings.items():
-            all_busco_stats[reporting_field] = busco_result_info[busco_field]
+            if busco_field in busco_version_info:
+                all_busco_stats[reporting_field] = busco_version_info[busco_field]
+        for busco_result_field, busco_result_value in busco_result_info.items():
+            if busco_result_field in ['Complete percentage', 'Complete']:
+                all_busco_stats['complete_percent'] = busco_result_value
+            elif busco_result_field in ['Single copy percentage', 'Single copy']:
+                all_busco_stats['single_copy_percent'] = busco_result_value
+            elif busco_result_field in ['Multi copy percentage', 'Multi copy']:
+                all_busco_stats['duplicated_percent'] = busco_result_value
+            elif busco_result_field in ['Fragmented percentage', 'Fragmented']:
+                all_busco_stats['fragmented_percent'] = busco_result_value
+            elif busco_result_field in ['Missing percentage', 'Missing']:
+                all_busco_stats['missing_percent'] = busco_result_value
+            else:
+                for reporting_field, busco_field in result_busco_mappings.items():
+                    all_busco_stats[reporting_field] = busco_result_info[busco_field]
         for atol_field, reporting_field in key_busco_mappings.items():
             key_busco_stats[atol_field] = all_busco_stats[reporting_field]
-
     busco_output = {'busco':all_busco_stats}
-
     stats_for_gnl.update(key_busco_stats)
 else:
     print("No BUSCO file specified")
     busco_output = {'busco':{}}
+
+if args.omark_file:
+    path_to_omark = args.omark_file
+    # define mappings from omark output
+    omark_key_mappings = {
+        'omark_percent_consistent':'consistent',
+        'omark_percent_inconsistent':'inconsistent',
+        'omark_percent_contaminant':'likely_contamination',
+        'omark_percent_unknown':'unknown'
+    }
+    omark_info_mappings = {
+        'omark_lineage':'selected_clade',
+        'conserved_hogs':'conserved_hogs',
+        'omark_protein_count':'proteins_in_proteome',
+        'omamer_version':'omamer_version',
+        'omamer_db_version':'db_version',
+        'omark_completeness_summary':'conserv_pcts_raw',
+        'omark_consistency_summary':'results_pcts_raw'
+    }
+    omark_conserved_hog_mappings = {
+        'single_hog_percent':'single',
+        'duplicated_hog_percent':'duplicated',
+        'unexpected_dup_hog_percent':'duplicated_unexpected',
+        'expected_dup_hog_percent':'duplicated_expected',
+        'missing_hog_percent':'missing'
+    }
+    omark_consistency_mappings = {
+        'percent_consistent_partial':'consistent_partial_hits',
+        'percent_consistent_fragments':'consistent_fragmented',
+        'percent_inconsistent_partial':'inconsistent_partial_hits',
+        'percent_inconsistent_fragments':'inconsistent_fragmented',
+        'percent_contaminant_partial':'likely_contamination_partial_hits',
+        'percent_contaminant_fragments':'likely_contamination_fragmented'
+    }
+    omark_detected_sp_mappings = {
+        'taxon':'Clade',
+        'NCBI_taxid':'NCBI_taxid',
+        'associated_protein_count':'Number_of_associated_proteins',
+        'associated_protein_pc':'Percentage_of_proteomes_total'
+    }
+    omark_detected_sp_mappings = {
+        'detected_sp':'detected_species'
+    }
+    # parse OMArk file and map to new field names
+    print('Parsing OMArk file')
+    with open(path_to_omark, "rt") as f:
+        key_omark_stats = {}
+        all_omark_stats = {}
+        all_omark_input = json.load(f)
+        omark_hogs = all_omark_input['conserv_pcts']
+        omark_consistency = all_omark_input['results_pcts']
+        omark_spp = all_omark_input['detected_species']
+        for reporting_field, omark_field in omark_info_mappings.items():
+            all_omark_stats[reporting_field] = all_omark_input[omark_field]
+        for reporting_field, omark_field in omark_key_mappings.items():
+            all_omark_stats[reporting_field] = omark_consistency[omark_field]
+        key_omark_stats.update(all_omark_stats)
+        for reporting_field, omark_field in omark_consistency_mappings.items():
+            all_omark_stats[reporting_field] = omark_consistency[omark_field]
+        for reporting_field, omark_field in omark_conserved_hog_mappings.items():
+            all_omark_stats[reporting_field] = omark_hogs[omark_field]
+        for reporting_field, omark_field in omark_detected_sp_mappings.items():
+            all_omark_stats[reporting_field] = []
+            for spp in range(len(omark_spp)):
+                all_omark_stats[reporting_field].append(omark_spp[spp])
+    omark_output = {'omark':all_omark_stats}
+    stats_for_gnl.update(key_omark_stats)
+else:
+    print("No OMArk file specified")
+    omark_output = {'omark':{}}
 
 with open(json_atol_report,'w', encoding="utf-8") as f:
     output_for_gnl = {'annotation':stats_for_gnl}
     json.dump(output_for_gnl, f)
 
 print("Combining statistics and writing to JSON")
-
-combined_stats = all_metadata | agat_output | busco_output
+combined_stats = all_metadata | agat_output | busco_output | omark_output
 
 with open(json_full_report, 'w', encoding="utf-8") as f:
     json.dump(combined_stats, f)
@@ -217,7 +304,7 @@ subprocess.run([
     "typst", "compile",
     str(path_to_template),
     str(output_pdf),
-    "--input", "file=dev/json_report.json"
+    "--input", "file=results/json_report.json"
 ], check=True)
 
 print("Script completed. Report available as PDF (" + str(output_pdf) + ") and JSON (" + str(json_full_report) + ")")

@@ -1,0 +1,58 @@
+{
+    "selected_clade": "Brassicaceae",
+    "conserved_hogs": 17996,
+    "results_on_conserved_hogs": null,
+    "conserv_counts": {
+        "single": 198,
+        "duplicated": 17,
+        "duplicated_unexpected": 15,
+        "duplicated_expected": 2,
+        "missing": 17781
+    },
+    "conserv_counts_raw": "S:198,D:17[U:15,E:2],M:17781",
+    "conserv_pcts": {
+        "single": 1.1,
+        "duplicated": 0.09,
+        "duplicated_unexpected": 0.08,
+        "duplicated_expected": 0.01,
+        "missing": 98.81
+    },
+    "conserv_pcts_raw": "S:1.10%,D:0.09%[U:0.08%,E:0.01%],M:98.81%",
+    "proteins_in_proteome": 288,
+    "results_counts": {
+        "consistent": 281,
+        "consistent_partial_hits": 0,
+        "consistent_fragmented": 6,
+        "inconsistent": 1,
+        "inconsistent_partial_hits": 0,
+        "inconsistent_fragmented": 0,
+        "likely_contamination": 0,
+        "likely_contamination_partial_hits": 0,
+        "likely_contamination_fragmented": 0,
+        "unknown": 6
+    },
+    "results_counts_raw": "A:281[P:0,F:6],I:1[P:0,F:0],C:0[P:0,F:0],U:6",
+    "results_pcts": {
+        "consistent": 97.57,
+        "consistent_partial_hits": 0.0,
+        "consistent_fragmented": 2.08,
+        "inconsistent": 0.35,
+        "inconsistent_partial_hits": 0.0,
+        "inconsistent_fragmented": 0.0,
+        "likely_contamination": 0.0,
+        "likely_contamination_partial_hits": 0.0,
+        "likely_contamination_fragmented": 0.0,
+        "unknown": 2.08
+    },
+    "results_pcts_raw": "A:97.57%[P:0.00%,F:2.08%],I:0.35%[P:0.00%,F:0.00%],C:0.00%[P:0.00%,F:0.00%],U:2.08%",
+    "detected_species": [
+        {
+            "Clade": "Arabidopsis thaliana",
+            "NCBI_taxid": 3702,
+            "Number_of_associated_proteins": 282,
+            "Percentage_of_proteomes_total": 97.92
+        }
+    ],
+    "omamer_version": "2.1.0",
+    "db_version": "2.0.3"
+}
