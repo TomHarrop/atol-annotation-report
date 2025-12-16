@@ -6,6 +6,11 @@ proteins.
 
 ## Installation
 
+```
+VERSION=v0.0.1
+python3 -m pip install \
+   "git+https://github.com/tomharrop/atol-annotation-report.git@${VERSION}"
+```
 
 ## Usage
 

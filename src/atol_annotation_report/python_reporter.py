@@ -10,6 +10,7 @@
 # this script simutaneously collects a subset of data for atol in atol_report.json.
 # atol_report.json contains an object which can be fed straight into the genome-note-lite pipeline.
 
+from importlib.resources import files
 from pathlib import Path
 import argparse
 import json
@@ -82,6 +83,8 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
+
+    path_to_template = Path(files(), "resources", "full_report_template.typ")
 
     # this dictionary will contain a json "annotation" object which can be inserted into the atol genome-note-lite input.
     stats_for_gnl = {}
@@ -168,9 +171,7 @@ def main():
                 )
         elif "mrna" in full_agat_input:
             mrna_stats = full_agat_input["mrna"]
-            key_agat_stats["feature_stats_calculated_for"] = (
-                "mRNAs (without isoforms)"
-            )
+            key_agat_stats["feature_stats_calculated_for"] = "mRNAs (without isoforms)"
             if "without_isoforms" in mrna_stats:
                 agat_stats_input = mrna_stats["without_isoforms"]["value"]
             elif "without_isoform" in mrna_stats:
@@ -251,9 +252,7 @@ def main():
                 all_busco_stats["missing_percent"] = busco_result_value
             else:
                 for reporting_field, busco_field in result_busco_mappings.items():
-                    all_busco_stats[reporting_field] = busco_result_info[
-                        busco_field
-                    ]
+                    all_busco_stats[reporting_field] = busco_result_info[busco_field]
         for atol_field, reporting_field in key_busco_mappings.items():
             key_busco_stats[atol_field] = all_busco_stats[reporting_field]
     busco_output = {"busco": all_busco_stats}
@@ -336,25 +335,23 @@ def main():
     # populate typst template with json dataa
     print("Rendering typst template")
 
-#     subprocess.run(
-#         [
-#             "typst",
-#             "compile",
-#             str(path_to_template),
-#             str(args.output_file),
-#             "--input", "file=src/atol_annotation_report/resources/json_full.json"
-# #            "file=" + str(args.json_full),
-#         ],
-#         check=True,
-#     )
+    #     subprocess.run(
+    #         [
+    #             "typst",
+    #             "compile",
+    #             str(path_to_template),
+    #             str(args.output_file),
+    #             "--input", "file=src/atol_annotation_report/resources/json_full.json"
+    # #            "file=" + str(args.json_full),
+    #         ],
+    #         check=True,
+    #     )
 
     full_results = {"full_results": json.dumps(combined_stats)}
 
     typst.compile(
-        input=path_to_template, 
-        output=args.output_file,
-        sys_inputs=full_results
-        )
+        input=path_to_template, output=args.output_file, sys_inputs=full_results
+    )
 
     print(
         "Script completed. Report available as PDF ("
@@ -363,11 +360,6 @@ def main():
         + str(args.json_full)
         + ")"
     )
-
-
-# Global variables
-path_to_template = "src/atol_annotation_report/resources/full_report_template.typ"
-
 
 
 if __name__ == "__main__":
