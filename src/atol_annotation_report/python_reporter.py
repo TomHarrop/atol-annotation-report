@@ -21,7 +21,8 @@ import yaml
 def parse_arguments():
 
     argument_parser = argparse.ArgumentParser(
-        description="This tool generates a JSON and PDF report of annotation metadata and metric vaules from BUSCO, OMArk, and AGAT evaulations for the purposes of QA"
+        description="This tool generates a JSON and PDF report of annotation metadata and metric vaules from BUSCO, OMArk, and AGAT evaulations for the purposes of QA",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     input_group = argument_parser.add_argument_group("Input")
@@ -61,19 +62,19 @@ def parse_arguments():
         "--output_file",
         default=Path("test_out.pdf"),
         type=Path,
-        help="your desired report file address for the output PDF report",
+        help="Path to the output PDF report",
     )
     output_group.add_argument(
         "--json_atol",
         default=Path("json_atol.json"),
         type=Path,
-        help="your desired report file address for the output PDF report",
+        help="Path to the output JSON data for Genome Note lite input",
     )
     output_group.add_argument(
         "--json_full",
         default=Path("json_full.json"),
         type=Path,
-        help="your desired report file address for the output PDF report",
+        help="Path to the output JSON data for all results",
     )
 
     args = argument_parser.parse_args()
