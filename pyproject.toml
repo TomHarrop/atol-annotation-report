@@ -2,7 +2,6 @@
 requires = ["setuptools>=80", "setuptools-scm[simple]>=8"]
 build-backend = "setuptools.build_meta"
 
-
 [project]
 name = "atol-annotation-report"
 dynamic = ["version"]
@@ -11,16 +10,13 @@ dependencies = ["pyyaml>=6.0.3", "typst>=0.14.4"]
 [project.scripts]
 atol-annotation-report = "atol_annotation_report.python_reporter:main"
 
-
 [tool.setuptools.package-data]
 atol_annotation_report = ["resources/metadata.json", "resources/test-data/*"]
 
 [tool.setuptools.exclude-package-data]
 "*" = ["extras/*"]
 
-
 [tool.setuptools]
 license-files = ["LICENSE"]
-
 
 [tool.setuptools_scm]
