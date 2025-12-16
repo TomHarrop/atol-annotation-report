@@ -6,6 +6,8 @@ proteins.
 
 ## Installation
 
+Install the package with pip as follows.
+
 ```
 VERSION=v0.0.1
 python3 -m pip install \
@@ -14,41 +16,86 @@ python3 -m pip install \
 
 ## Usage
 
-[python-reporter.py](/reporting-tool/python_reporter.py) takes as input:
- - 3 mandatory arguments:
-    - `-m`: path to a JSON metadata file with metadata specified according to the Annotation Metadata Schema (link pending)
-    - `-a`: path to a YAML AGAT output report file
-    - `-b`: path to a JSON BUSCO output report file
-    - `-om`: path to a JSON OMArk output report file
- - 1 optional argument:
-    - `-o`: path to PDF report output (if not provided, the default is `"reporting-tool/dev/full_report.pdf"`)
+```
+atol-annotation-report \
+   --metadata_file path/to/metadata.json \
+   -a src/atol_annotation_report/resources/test-data/agat.stats.yaml \
+   -b src/atol_annotation_report/resources/test-data/short_summary.specific.busco.json \
+   -om src/atol_annotation_report/resources/test-data/omark_summary.json
+```
+
+To run [atol-annotation-report](/reporting-tool/python_reporter.py) you need:
+
+- a JSON file containing metadata according to the Annotation Metadata Schema
+- a YAML file generated as output from an AGAT analysis on your annotation file
+- a JSON file generated as output from a BUSCO analysis on your annotation file
+- a JSON file generated as output from an OMArk analysis on your annotation file
 
 
 ### Full usage
 
 ```
+usage: atol-annotation-report [-h] -m METADATA_FILE -a AGAT_FILE -b BUSCO_FILE -om OMARK_FILE
+                              [-o OUTPUT_FILE] [--json_atol JSON_ATOL] [--json_full JSON_FULL]
 
+This tool generates a JSON and PDF report of annotation metadata and metric vaules from BUSCO, OMArk, and
+AGAT evaulations for the purposes of QA
 
+options:
+  -h, --help            show this help message and exit
+
+Input:
+  -m METADATA_FILE, --metadata_file METADATA_FILE
+                        a JSON file containing metadata according to the Annotation Metadata Schema
+                        (default: None)
+  -a AGAT_FILE, --agat_file AGAT_FILE
+                        a YAML file generated as output from an AGAT analysis on your annotation file
+                        (default: None)
+  -b BUSCO_FILE, --busco_file BUSCO_FILE
+                        a JSON file generated as output from a BUSCO analysis on your annotation file
+                        (default: None)
+  -om OMARK_FILE, --omark_file OMARK_FILE
+                        a JSON file generated as output from an OMArk analysis on your annotation file
+                        (default: None)
+
+Output:
+  -o OUTPUT_FILE, --output_file OUTPUT_FILE
+                        Path to the output PDF report (default: test_out.pdf)
+  --json_atol JSON_ATOL
+                        Path to the output JSON data for Genome Note lite input (default: json_atol.json)
+  --json_full JSON_FULL
+                        Path to the output JSON data for all results (default: json_full.json)
 ```
 
 ## Outputs
 
-[python-reporter.py](/reporting-tool/python_reporter.py) generates:
- - a PDF report listing the provided metadata and statistics generated in BUSCO and AGAT analyses in human-readable format
- - a JSON report with the same key-value pairs used to generate the PDF above
- - a JSON report containing a small subset of annotation metrics used in the AToL genome-note-lite pipeline
 
+- a PDF report listing the provided metadata and statistics generated in BUSCO
+  and AGAT analyses in human-readable format
+- a JSON report with the same key-value pairs used to generate the PDF above
+- a JSON report containing a small subset of annotation metrics used in the
+  AToL genome-note-lite pipeline
 
+## How it works
 
-, combines values and statistics as a JSON file and uses that file to populate a typst template to 
+`atol-annotation-report` combines values and statistics as a JSON file and uses
+that file to populate a typst template.
 
-This tool was originally created at the 2025 Biohackathon as part of Project 23: Streamlining Metadata for Biodiversity Genome Annotation (see [fairtracks/biohackathon-2025-project-23](https://github.com/fairtracks/biohackathon-2025-project-23)). Part of the goal of the project was to develop a tool which generates a report-style output summarising the results from QA a genome annotation, e.g. BUSCO, OMArk, and AGAT analyses.
+This tool was originally created at the 2025 Biohackathon as part of Project
+23: Streamlining Metadata for Biodiversity Genome Annotation (see
+[fairtracks/biohackathon-2025-project-23](https://github.com/fairtracks/biohackathon-2025-project-23)).
+Part of the goal of the project was to develop a tool which generates a
+report-style output summarising the results from QA a genome annotation, e.g.
+BUSCO, OMArk, and AGAT analyses.
 
-This repo holds the original reporting tool as a Perl script, as well as an adapted reporting tool in Python which is being developed to simultaneously generate a subset of metadata and values which can be used as input to the Australian Tree of Life (AToL) genome-note-lite pipeline.
+This repo holds the reporting tool and simultaneously generates a subset of
+metadata and values which can be used as input to the Australian Tree of Life
+(AToL) genome-note-lite pipeline.
 
-See the README [here](/reporting-tool)# FAIR metadata annotation reporting tool
+The [reporter.pl](./extras) script contains the original
+reporting tool generated as part of the 2025 Biohackathon.
 
-The [reporter.pl](/reporting-tool/reporter.pl) script contains the original reporting tool generated as part of the 2025 Biohackathon.
-
-
-The [python-reporter.py](/reporting-tool/python_reporter.py) script is an adaptation of the above script. It generates the same report from the same typst template file, and simultaneously generates an atol_report JSON file for use in the AToL genome note lite pipeline.
+[python-reporter.py](./src/atol_annotation_report/python_reporter.py) is an
+adaptation of the above script. It generates the same report from the same
+typst template file, and simultaneously generates an atol_report JSON file for
+use in the AToL genome note lite pipeline.
