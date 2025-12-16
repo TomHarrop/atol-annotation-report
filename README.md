@@ -39,6 +39,17 @@ Optionally, you can include:
   [`atol-qc-annotation`](https://github.com/TomHarrop/atol-qc-annotation)
 
 
+## Outputs
+
+- a PDF report listing the provided metadata and statistics generated in BUSCO
+  and AGAT analyses in human-readable format
+- a JSON report with the same key-value pairs used to generate the PDF above
+- a JSON report containing a small subset of annotation metrics used in the
+  AToL genome-note-lite pipeline
+
+See the [sample-output](./extras/sample-output) directory for examples.
+
+
 ### Full usage
 
 ```
@@ -74,14 +85,6 @@ Output:
                         Path to the output JSON data for all results (default: json_full.json)
 ```
 
-## Outputs
-
-
-- a PDF report listing the provided metadata and statistics generated in BUSCO
-  and AGAT analyses in human-readable format
-- a JSON report with the same key-value pairs used to generate the PDF above
-- a JSON report containing a small subset of annotation metrics used in the
-  AToL genome-note-lite pipeline
 
 ## How it works
 
