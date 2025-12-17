@@ -214,7 +214,7 @@
     columns: (25%, auto),
     stroke: none,
     [*Gene:*], [#rep.agat.shortest_gene],
-    [#if rep.agat.shortest_transcript != "N/A" [*mRNA:*] else [*Transcript:*]], [#if rep.agat.shortest_transcript != "N/A" [#rep.agat.shortest_transcript] else [#rep.agat.shortest_transcript]],
+    [#if rep.agat.shortest_mrna != "N/A" [*mRNA:*] else [*Transcript:*]], [#if rep.agat.shortest_mrna != "N/A" [#rep.agat.shortest_mrna] else [#rep.agat.shortest_transcript]],
   )
 ]
 
