@@ -17,7 +17,7 @@
 )
 
 // Load report data
-#let rep = json(sys.inputs.at("file"))
+#let rep = json(bytes(sys.inputs.full_results))
 
 #grid(columns: (1fr, auto), column-gutter: 1em, [
   #heading(level: 1, "Genome Annotation Report")
