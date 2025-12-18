@@ -24,7 +24,7 @@ atol-annotation-report \
    --omark_file path/to/omark_summary.json
 ```
 
-To run [atol-annotation-report](/reporting-tool/python_reporter.py) you need:
+To run [atol-annotation-report](./src/atol_annotation_report/python_reporter.py) you need:
 
 - a JSON file containing metadata according to the Annotation Metadata Schema
 - a YAML file generated as output from an AGAT analysis on your annotation
@@ -53,36 +53,47 @@ See the [sample-output](./extras/sample-output) directory for examples.
 ### Full usage
 
 ```
-usage: atol-annotation-report [-h] -m METADATA_FILE -a AGAT_FILE -b BUSCO_FILE -om OMARK_FILE
-                              [-o OUTPUT_FILE] [--json_atol JSON_ATOL] [--json_full JSON_FULL]
+usage: atol-annotation-report [-h] [-m [METADATA_FILE]] [-a [AGAT_FILE]]
+                              [-b [BUSCO_FILE]] [-om [OMARK_FILE]]
+                              [-ao [ANNOODDITIES_FILE]] [-o OUTPUT_FILE]
+                              [--json_atol JSON_ATOL]
+                              [--json_full JSON_FULL]
 
-This tool generates a JSON and PDF report of annotation metadata and metric vaules from BUSCO, OMArk, and
-AGAT evaulations for the purposes of QA
+This tool generates a JSON and PDF report of annotation metadata and
+metric vaules from BUSCO, OMArk, and AGAT evaulations for the purposes
+of QA
 
 options:
   -h, --help            show this help message and exit
 
 Input:
-  -m METADATA_FILE, --metadata_file METADATA_FILE
-                        a JSON file containing metadata according to the Annotation Metadata Schema
-                        (default: None)
-  -a AGAT_FILE, --agat_file AGAT_FILE
-                        a YAML file generated as output from an AGAT analysis on your annotation file
-                        (default: None)
-  -b BUSCO_FILE, --busco_file BUSCO_FILE
-                        a JSON file generated as output from a BUSCO analysis on your annotation file
-                        (default: None)
-  -om OMARK_FILE, --omark_file OMARK_FILE
-                        a JSON file generated as output from an OMArk analysis on your annotation file
+  -m [METADATA_FILE], --metadata_file [METADATA_FILE]
+                        a JSON file containing metadata according to the
+                        Annotation Metadata Schema (default: None)
+  -a [AGAT_FILE], --agat_file [AGAT_FILE]
+                        a YAML file generated as output from an AGAT
+                        analysis on your annotation file (default: None)
+  -b [BUSCO_FILE], --busco_file [BUSCO_FILE]
+                        a JSON file generated as output from a BUSCO
+                        analysis on your annotation file (default: None)
+  -om [OMARK_FILE], --omark_file [OMARK_FILE]
+                        a JSON file generated as output from an OMArk
+                        analysis on your annotation file (default: None)
+  -ao [ANNOODDITIES_FILE], --annooddities_file [ANNOODDITIES_FILE]
+                        a TXT file summarising any oddities found in the
+                        AnnoOddity analysis of your annotation file
                         (default: None)
 
 Output:
   -o OUTPUT_FILE, --output_file OUTPUT_FILE
-                        Path to the output PDF report (default: test_out.pdf)
+                        Path to the output PDF report (default:
+                        test_out.pdf)
   --json_atol JSON_ATOL
-                        Path to the output JSON data for Genome Note lite input (default: json_atol.json)
+                        Path to the output JSON data for Genome Note
+                        lite input (default: json_atol.json)
   --json_full JSON_FULL
-                        Path to the output JSON data for all results (default: json_full.json)
+                        Path to the output JSON data for all results
+                        (default: json_full.json)
 ```
 
 
