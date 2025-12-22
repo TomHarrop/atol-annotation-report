@@ -11,7 +11,11 @@ dependencies = ["pyyaml>=6.0.3", "typst>=0.14.4"]
 atol-annotation-report = "atol_annotation_report.python_reporter:main"
 
 [tool.setuptools.package-data]
-atol_annotation_report = ["resources/metadata.json", "resources/test-data/*"]
+atol_annotation_report = [
+    "resources/full_report_template.typ",
+    "resources/metadata.json",
+    "resources/test-data/*",
+    ]
 
 [tool.setuptools.exclude-package-data]
 "*" = ["extras/*"]
