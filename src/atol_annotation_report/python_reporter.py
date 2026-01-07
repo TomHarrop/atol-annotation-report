@@ -10,13 +10,13 @@
 # this script simutaneously collects a subset of data for atol in atol_report.json.
 # atol_report.json contains an object which can be fed straight into the genome-note-lite pipeline.
 
+
 from importlib.resources import files
 from pathlib import Path
 import argparse
 import json
 import typst
 import yaml
-
 
 def parse_arguments():
 
@@ -88,10 +88,13 @@ def parse_arguments():
 
     return args
 
-
+# Possibly break main up into sub-functions, e.g. one for the BUSCO file, one
+# for the OMArk, etc. If you repeat code, it should be a function. (not always
+# possible!)
 def main():
     args = parse_arguments()
 
+    # could be an arg with a default
     path_to_template = Path(files(), "resources", "full_report_template.typ")
 
     # this dictionary will contain a json "annotation" object which can be inserted into the atol genome-note-lite input.
@@ -101,7 +104,7 @@ def main():
     if args.metadata_file is not None:
         path_to_metadata = args.metadata_file
         all_metadata["metadata_input_provided"] = True
-        print("Parsing metadata")
+        print("Parsing metadata") # could use a logger (see https://github.com/TomHarrop/atol-bpa-datamapper/blob/main/src/atol_bpa_datamapper/logger.py)
         with open(path_to_metadata, "rt") as f:
             metadata_input = json.load(f)
             for dict in metadata_input:
@@ -112,68 +115,16 @@ def main():
         print("No metadata file specified")
         all_metadata["metadata_input_provided"] = False
 
+    # An alternative to storing configs here, is to add them to a module (e.g.
+    # mapping_configs.py) and import them like this: `import mapping_configs`.
+    # You can then use them as e.g. `mapping_configs.key_agat_mappings`. We
+    # might also need to add the config file to the pyproject.toml.
+
     all_agat_stats = {}
     if args.agat_file is not None:
         path_to_agat = args.agat_file
         # define mappings from agat yaml input to annotation schema fields
-        key_agat_mappings = {
-            "gene_count": "Number of gene",
-            "cds_count": "Number of cds",
-            "transcript_count": "Number of transcript",
-            "mrna_count": "Number of mrna",
-            "mean_transcript_length": "mean transcript length (bp)",
-            "mean_mrna_length": "mean mrna length (bp)",
-            "mean_transcripts_per_gene": "mean transcripts per gene",
-            "mean_mrnas_per_gene": "mean mrnas per gene",
-            "mean_exons_per_transcript": "mean exons per transcript",
-            "mean_exons_per_mrna": "mean exons per mrna",
-        }
-        additional_agat_mappings = {
-            "exon_count": "Number of exon",
-            "mean_exon_length": "mean exon length (bp)",
-            "mean_gene_length": "mean gene length (bp)",
-            "total_gene_length": "Total gene length (bp)",
-            "total_transcript_length": "Total transcript length (bp)",
-            "total_mrna_length": "Total mrna length (bp)",
-        }
-        full_stat_agat_mappings = {
-            "intron_count": "Number of intron",
-            "single_exon_gene_count": "Number of single exon gene",
-            "single_exon_transcript_count": "Number of single exon transcript",
-            "single_exon_mrna_count": "Number of single exon mrna",
-        }
-        mean_stat_agat_mappings = {
-            "mean_cds_length": "mean cds length (bp)",
-            "mean_intron_length": "mean intron length (bp)",
-            "mean_cdss_per_transcript": "mean cdss per transcript",
-            "mean_cdss_per_mrna": "mean cdss per mrna",
-            "mean_exons_per_cds": "mean exons per cds",
-            "mean_introns_per_transcript": "mean introns per transcript",
-        }
-        median_stat_agat_mappings = {
-            "median_gene_length": "median gene length (bp)",
-            "median_transcript_length": "median transcript length (bp)",
-            "median_mrna_length": "median mrna length (bp)",
-            "median_exon_length": "median exon length (bp)",
-            "median_cds_length": "median cds length (bp)",
-            "median_intron_length": "median intron length (bp)",
-        }
-        long_short_agat_mappings = {
-            "longest_gene": "Longest gene (bp)",
-            "longest_transcript": "Longest transcript (bp)",
-            "longest_mrna": "Longest mrna (bp)",
-            "longest_exon": "Longest exon (bp)",
-            "longest_cds": "Longest cds (bp)",
-            "longest_intron": "Longest intron (bp)",
-            "shortest_gene": "Shortest gene (bp)",
-            "shortest_transcript": "Shortest transcript (bp)",
-            "shortest_mrna": "Shortest mrna (bp)",
-        }
-        length_agat_mappings = {
-            "total_cds_length": "Total cds length (bp)",
-            "total_exon_length": "Total exon length (bp)",
-            "total_intron_length": "Total intron length (bp)",
-        }
+
         # TODO: parse and map AGAT software version and add to key_agat_mappings
         # parse AGAT yaml and map to new field names
         all_agat_stats["agat_input_provided"] = True
@@ -181,19 +132,24 @@ def main():
         with open(path_to_agat, "rt") as f:
             key_agat_stats = {}
             full_agat_input = yaml.load(f, Loader=yaml.SafeLoader)
+
             if "transcript" in full_agat_input:
                 transcript_stats = full_agat_input["transcript"]
                 key_agat_stats["feature_stats_calculated_for"] = (
                     "transcripts (without isoforms)"
                 )
-                if "without_isoforms" in transcript_stats:
+                # for the fun of it, with error handling (another way of
+                # expressing the same thing).
+                try:
                     agat_stats_input = transcript_stats["without_isoforms"]["value"]
-                elif "without_isoform" in transcript_stats:
-                    agat_stats_input = transcript_stats["without_isoform"]["value"]
-                else:
-                    print(
+                except KeyError as e:
+                    logger.warning(
                         "AGAT stats for transcripts without isoform not found, looking for stats for mRNAs"
                     )
+                    # Do some custom error handling, e.g.
+                    # logger.error("You must supply a without_isoforms section")
+                    # raise e
+
             elif "mrna" in full_agat_input:
                 mrna_stats = full_agat_input["mrna"]
                 key_agat_stats["feature_stats_calculated_for"] = (
@@ -207,6 +163,8 @@ def main():
                     print("AGAT stats mRNAs without isoform stats not found")
             else:
                 print("error: no transcript or mRNA stats detected in AGAT yaml file")
+            # The for blocks might be a candidate for a function (e.g. a
+            # mapping function e.g. def map_value(field, value):)
             for reporting_field, agat_field in key_agat_mappings.items():
                 if agat_field in agat_stats_input:
                     key_agat_stats[reporting_field] = agat_stats_input[agat_field]
@@ -231,7 +189,8 @@ def main():
                     all_agat_stats[reporting_field] = agat_stats_input[agat_field]
         for key, value in key_agat_mappings.items():
             if key not in all_agat_stats.keys():
-                all_agat_stats[key] = "N/A"
+                # Worth using the language's concept of Null
+                all_agat_stats[key] = None
         for key, value in additional_agat_mappings.items():
             if key not in all_agat_stats.keys():
                 all_agat_stats[key] = "N/A"
@@ -257,6 +216,8 @@ def main():
         all_agat_stats["agat_input_provided"] = False
     agat_output = {"agat": all_agat_stats}
 
+    # Tool-specific parsing could be a higher-level function (i.e. it calls the
+    # lower-level mapping functions )
     all_busco_stats = {}
     if args.busco_file is not None:
         path_to_busco = args.busco_file
@@ -301,6 +262,8 @@ def main():
                 if busco_field in busco_version_info:
                     all_busco_stats[reporting_field] = busco_version_info[busco_field]
             for busco_result_field, busco_result_value in busco_result_info.items():
+                # In general, it's nice to avoid hard-coding... might be
+                # difficult here?
                 if busco_result_field in ["Complete percentage", "Complete"]:
                     all_busco_stats["complete_percent"] = busco_result_value
                 elif busco_result_field in ["Single copy percentage", "Single copy"]:
@@ -475,6 +438,7 @@ def main():
         all_metadata | agat_output | busco_output | omark_output | oddity_output
     )
 
+    # this could be a function? write_data(combined_stats, file_path)
     with open(args.json_full, "w", encoding="utf-8") as f:
         json.dump(combined_stats, f)
 
@@ -483,10 +447,12 @@ def main():
 
     print("Rendering typst template")
 
+    # this could be a function?
     typst.compile(
         input=path_to_template, output=args.output_file, sys_inputs=full_results
     )
 
+    # logger?
     print(
         "AToL Annotation Report Tool completed. Report available as PDF ("
         + str(args.output_file)
