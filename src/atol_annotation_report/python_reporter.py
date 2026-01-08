@@ -17,6 +17,7 @@ import argparse
 import json
 import typst
 import yaml
+from atol_annotation_report import mapping_configs
 
 def parse_arguments():
 
@@ -63,6 +64,13 @@ def parse_arguments():
         type=Path,
         help="a TXT file summarising any oddities found in the AnnoOddity analysis of your annotation file",
     )
+    input_group.add_argument(
+        "-t",
+        "--template_file",
+        default=Path(files(), "resources", "full_report_template.typ"),
+        type=Path,
+        help="Path to the .typ document used as the base template populated with metadata and metrics from QA tools"
+    )
 
     output_group.add_argument(
         "-o",
@@ -95,17 +103,29 @@ def main():
     args = parse_arguments()
 
     # could be an arg with a default
-    path_to_template = Path(files(), "resources", "full_report_template.typ")
+    # path_to_template = Path(files(), "resources", "full_report_template.typ")
+
+    # writing new functions for mapping
+    def map_stat_to_report(mapping_section, stat_input, report_output):
+        for report_field, stat_field in mapping_section.items():
+            if stat_field in stat_input:
+                report_output[report_field] = stat_input[stat_field]
+            else:
+                report_output[report_field] = None
+
+    def map_one_to_many(one_to_many_maps, stat_input, report_output, report_field):
+        for stat_field, stat_value in stat_input.items():
+            if stat_field in one_to_many_maps:
+                report_output[report_field] = stat_value
 
     # this dictionary will contain a json "annotation" object which can be inserted into the atol genome-note-lite input.
     stats_for_gnl = {}
 
     all_metadata = {}
     if args.metadata_file is not None:
-        path_to_metadata = args.metadata_file
         all_metadata["metadata_input_provided"] = True
         print("Parsing metadata") # could use a logger (see https://github.com/TomHarrop/atol-bpa-datamapper/blob/main/src/atol_bpa_datamapper/logger.py)
-        with open(path_to_metadata, "rt") as f:
+        with open(args.metadata_file, "rt") as f:
             metadata_input = json.load(f)
             for dict in metadata_input:
                 key = dict["meta_key"]
@@ -122,22 +142,28 @@ def main():
 
     all_agat_stats = {}
     if args.agat_file is not None:
-        path_to_agat = args.agat_file
         # define mappings from agat yaml input to annotation schema fields
-
         # TODO: parse and map AGAT software version and add to key_agat_mappings
         # parse AGAT yaml and map to new field names
         all_agat_stats["agat_input_provided"] = True
         print("Parsing AGAT file")
-        with open(path_to_agat, "rt") as f:
+        with open(args.agat_file, "rt") as f:
             key_agat_stats = {}
             full_agat_input = yaml.load(f, Loader=yaml.SafeLoader)
-
             if "transcript" in full_agat_input:
                 transcript_stats = full_agat_input["transcript"]
                 key_agat_stats["feature_stats_calculated_for"] = (
                     "transcripts (without isoforms)"
                 )
+                if "without_isoforms" in transcript_stats:
+                    agat_stats_input = transcript_stats["without_isoforms"]["value"]
+                elif "without_isoform" in transcript_stats:
+                    agat_stats_input = transcript_stats["without_isoform"]["value"]
+                else:
+                    print(
+                        "AGAT stats for transcripts without isoform not found, looking for stats for mRNAs"
+                    )
+                '''
                 # for the fun of it, with error handling (another way of
                 # expressing the same thing).
                 try:
@@ -149,7 +175,7 @@ def main():
                     # Do some custom error handling, e.g.
                     # logger.error("You must supply a without_isoforms section")
                     # raise e
-
+                    '''
             elif "mrna" in full_agat_input:
                 mrna_stats = full_agat_input["mrna"]
                 key_agat_stats["feature_stats_calculated_for"] = (
@@ -163,53 +189,20 @@ def main():
                     print("AGAT stats mRNAs without isoform stats not found")
             else:
                 print("error: no transcript or mRNA stats detected in AGAT yaml file")
+            all_agat_stats.update(key_agat_stats)
             # The for blocks might be a candidate for a function (e.g. a
             # mapping function e.g. def map_value(field, value):)
-            for reporting_field, agat_field in key_agat_mappings.items():
-                if agat_field in agat_stats_input:
-                    key_agat_stats[reporting_field] = agat_stats_input[agat_field]
-            all_agat_stats.update(key_agat_stats)
-            for reporting_field, agat_field in additional_agat_mappings.items():
-                if agat_field in agat_stats_input:
-                    all_agat_stats[reporting_field] = agat_stats_input[agat_field]
-            for reporting_field, agat_field in full_stat_agat_mappings.items():
-                if agat_field in agat_stats_input:
-                    all_agat_stats[reporting_field] = agat_stats_input[agat_field]
-            for reporting_field, agat_field in mean_stat_agat_mappings.items():
-                if agat_field in agat_stats_input:
-                    all_agat_stats[reporting_field] = agat_stats_input[agat_field]
-            for reporting_field, agat_field in median_stat_agat_mappings.items():
-                if agat_field in agat_stats_input:
-                    all_agat_stats[reporting_field] = agat_stats_input[agat_field]
-            for reporting_field, agat_field in long_short_agat_mappings.items():
-                if agat_field in agat_stats_input:
-                    all_agat_stats[reporting_field] = agat_stats_input[agat_field]
-            for reporting_field, agat_field in length_agat_mappings.items():
-                if agat_field in agat_stats_input:
-                    all_agat_stats[reporting_field] = agat_stats_input[agat_field]
-        for key, value in key_agat_mappings.items():
-            if key not in all_agat_stats.keys():
-                # Worth using the language's concept of Null
-                all_agat_stats[key] = None
-        for key, value in additional_agat_mappings.items():
-            if key not in all_agat_stats.keys():
-                all_agat_stats[key] = "N/A"
-        for key, value in full_stat_agat_mappings.items():
-            if key not in all_agat_stats.keys():
-                all_agat_stats[key] = "N/A"
-        for key, value in mean_stat_agat_mappings.items():
-            if key not in all_agat_stats.keys():
-                all_agat_stats[key] = "N/A"
-        for key, value in median_stat_agat_mappings.items():
-            if key not in all_agat_stats.keys():
-                all_agat_stats[key] = "N/A"
-        for key, value in long_short_agat_mappings.items():
-            if key not in all_agat_stats.keys():
-                all_agat_stats[key] = "N/A"
-        for key, value in length_agat_mappings.items():
-            if key not in all_agat_stats.keys():
-                all_agat_stats[key] = "N/A"
-        # agat_output = {'agat':all_agat_stats}
+            map_stat_to_report(mapping_section=mapping_configs.key_agat_mappings, stat_input=agat_stats_input, report_output=key_agat_stats)
+            for mapping_sect in [
+                mapping_configs.key_agat_mappings,
+                mapping_configs.additional_agat_mappings,
+                mapping_configs.full_stat_agat_mappings,
+                mapping_configs.mean_stat_agat_mappings,
+                mapping_configs.median_stat_agat_mappings,
+                mapping_configs.long_short_agat_mappings,
+                mapping_configs.length_agat_mappings
+            ]:
+                map_stat_to_report(mapping_section=mapping_sect, stat_input=agat_stats_input, report_output=all_agat_stats)
         stats_for_gnl.update(key_agat_stats)
     else:
         print("No AGAT file specified")
@@ -220,82 +213,69 @@ def main():
     # lower-level mapping functions )
     all_busco_stats = {}
     if args.busco_file is not None:
-        path_to_busco = args.busco_file
-        # define mappings from BUSCO json input to annotation schema fields
-        parameter_busco_mappings = {"mode": "mode", "gene_predictor": "gene_predictor"}
-        lineage_busco_mappings = {"lineage_name": "name"}
-        version_busco_mappings = {
-            "version_busco": "busco",
-            "version_hmmsearch": "hmmsearch",
-            "version_metaeuk": "metaeuk",
-            "version_augustus": "augustus",
-            "version_miniprot": "miniprot",
-        }
-        result_busco_mappings = {
-            "one_line_summary": "one_line_summary",
-            "n_markers": "n_markers",
-            "domain": "domain",
-        }
-        # these are mappings from the annotation schema to the atol schema
-        key_busco_mappings = {
-            "annot_busco_mode": "mode",
-            "annot_busco_lineage": "lineage_name",
-            "annot_busco_summary": "one_line_summary",
-            "annot_busco_version": "version_busco",
-        }
         all_busco_stats["busco_input_provided"] = True
         # parse BUSCO json and map to new field names
         print("Parsing BUSCO file")
-        with open(path_to_busco, "rt") as f:
+        with open(args.busco_file, "rt") as f:
             key_busco_stats = {}
             all_busco_input = json.load(f)
-            busco_param_info = all_busco_input["parameters"]
-            busco_lineage_info = all_busco_input["lineage_dataset"]
-            busco_version_info = all_busco_input["versions"]
-            busco_result_info = all_busco_input["results"]
-            for reporting_field, busco_field in parameter_busco_mappings.items():
-                if busco_field in busco_param_info:
-                    all_busco_stats[reporting_field] = busco_param_info[busco_field]
-            for reporting_field, busco_field in lineage_busco_mappings.items():
-                all_busco_stats[reporting_field] = busco_lineage_info[busco_field]
-            for reporting_field, busco_field in version_busco_mappings.items():
-                if busco_field in busco_version_info:
-                    all_busco_stats[reporting_field] = busco_version_info[busco_field]
-            for busco_result_field, busco_result_value in busco_result_info.items():
-                # In general, it's nice to avoid hard-coding... might be
-                # difficult here?
-                if busco_result_field in ["Complete percentage", "Complete"]:
-                    all_busco_stats["complete_percent"] = busco_result_value
-                elif busco_result_field in ["Single copy percentage", "Single copy"]:
-                    all_busco_stats["single_copy_percent"] = busco_result_value
-                elif busco_result_field in ["Multi copy percentage", "Multi copy"]:
-                    all_busco_stats["duplicated_percent"] = busco_result_value
-                elif busco_result_field in ["Fragmented percentage", "Fragmented"]:
-                    all_busco_stats["fragmented_percent"] = busco_result_value
-                elif busco_result_field in ["Missing percentage", "Missing"]:
-                    all_busco_stats["missing_percent"] = busco_result_value
-                else:
-                    for reporting_field, busco_field in result_busco_mappings.items():
-                        all_busco_stats[reporting_field] = busco_result_info[
-                            busco_field
-                        ]
-            for atol_field, reporting_field in key_busco_mappings.items():
-                key_busco_stats[atol_field] = all_busco_stats[reporting_field]
-        for key, value in parameter_busco_mappings.items():
-            if key not in all_busco_stats.keys():
-                all_busco_stats[key] = "N/A"
-        for key, value in lineage_busco_mappings.items():
-            if key not in all_busco_stats.keys():
-                all_busco_stats[key] = "N/A"
-        for key, value in version_busco_mappings.items():
-            if key not in all_busco_stats.keys():
-                all_busco_stats[key] = "N/A"
-        for key, value in result_busco_mappings.items():
-            if key not in all_busco_stats.keys():
-                all_busco_stats[key] = "N/A"
-        for key, value in result_busco_mappings.items():
-            if key not in all_busco_stats.keys():
-                all_busco_stats[key] = "N/A"
+            map_stat_to_report(
+                mapping_section=mapping_configs.parameter_busco_mappings, 
+                stat_input=all_busco_input["parameters"], 
+                report_output=all_busco_stats
+            )
+            map_stat_to_report(
+                mapping_section=mapping_configs.lineage_busco_mappings, 
+                stat_input=all_busco_input["lineage_dataset"], 
+                report_output=all_busco_stats
+            )
+            map_stat_to_report(
+                mapping_section=mapping_configs.version_busco_mappings, 
+                stat_input=all_busco_input["versions"], 
+                report_output=all_busco_stats
+            )
+            map_stat_to_report(
+                mapping_section=mapping_configs.result_busco_mappings, 
+                stat_input=all_busco_input["results"], 
+                report_output=all_busco_stats
+            )
+            # In general, it's nice to avoid hard-coding... might be
+            # difficult here?
+            map_one_to_many(
+                one_to_many_maps=mapping_configs.busco_complete_pct,
+                stat_input=all_busco_input["results"],
+                report_output=all_busco_stats,
+                report_field="complete_percent"
+            )
+            map_one_to_many(
+                one_to_many_maps=mapping_configs.busco_single_pct,
+                stat_input=all_busco_input["results"],
+                report_output=all_busco_stats,
+                report_field="single_copy_percent"
+            )
+            map_one_to_many(
+                one_to_many_maps=mapping_configs.busco_multi_pct,
+                stat_input=all_busco_input["results"],
+                report_output=all_busco_stats,
+                report_field="duplicated_percent"
+            )
+            map_one_to_many(
+                one_to_many_maps=mapping_configs.busco_frag_pct,
+                stat_input=all_busco_input["results"],
+                report_output=all_busco_stats,
+                report_field="fragmented_percent"
+            )
+            map_one_to_many(
+                one_to_many_maps=mapping_configs.busco_missing_pct,
+                stat_input=all_busco_input["results"],
+                report_output=all_busco_stats,
+                report_field="missing_percent"
+            )
+            map_stat_to_report(
+                mapping_section=mapping_configs.key_busco_mappings, 
+                stat_input=all_busco_stats, 
+                report_output=key_busco_stats
+            )
         stats_for_gnl.update(key_busco_stats)
     else:
         print("No BUSCO file specified")
@@ -304,79 +284,45 @@ def main():
 
     all_omark_stats = {}
     if args.omark_file is not None:
-        path_to_omark = args.omark_file
-        # define mappings from omark output
-        omark_key_mappings = {
-            "omark_percent_consistent": "consistent",
-            "omark_percent_inconsistent": "inconsistent",
-            "omark_percent_contaminant": "likely_contamination",
-            "omark_percent_unknown": "unknown",
-        }
-        omark_info_mappings = {
-            "omark_lineage": "selected_clade",
-            "conserved_hogs": "conserved_hogs",
-            "omark_protein_count": "proteins_in_proteome",
-            "omamer_version": "omamer_version",
-            "omamer_db_version": "db_version",
-            "omark_completeness_summary": "conserv_pcts_raw",
-            "omark_consistency_summary": "results_pcts_raw",
-        }
-        omark_conserved_hog_mappings = {
-            "single_hog_percent": "single",
-            "duplicated_hog_percent": "duplicated",
-            "unexpected_dup_hog_percent": "duplicated_unexpected",
-            "expected_dup_hog_percent": "duplicated_expected",
-            "missing_hog_percent": "missing",
-        }
-        omark_consistency_mappings = {
-            "percent_consistent_partial": "consistent_partial_hits",
-            "percent_consistent_fragments": "consistent_fragmented",
-            "percent_inconsistent_partial": "inconsistent_partial_hits",
-            "percent_inconsistent_fragments": "inconsistent_fragmented",
-            "percent_contaminant_partial": "likely_contamination_partial_hits",
-            "percent_contaminant_fragments": "likely_contamination_fragmented",
-        }
         all_omark_stats["omark_input_provided"] = True
         # parse OMArk file and map to new field names
         print("Parsing OMArk file")
-        with open(path_to_omark, "rt") as f:
+        with open(args.omark_file, "rt") as f:
             key_omark_stats = {}
             all_omark_stats["detected_sp"] = []
             all_omark_stats["contaminant_sp"] = []
             all_omark_input = json.load(f)
-            omark_hogs = all_omark_input["conserv_pcts"]
-            omark_consistency = all_omark_input["results_pcts"]
             omark_spp = all_omark_input["detected_species"]
-            for reporting_field, omark_field in omark_info_mappings.items():
-                all_omark_stats[reporting_field] = all_omark_input[omark_field]
-            for reporting_field, omark_field in omark_key_mappings.items():
-                all_omark_stats[reporting_field] = omark_consistency[omark_field]
+            map_stat_to_report(
+                mapping_section=mapping_configs.omark_info_mappings, 
+                stat_input=all_omark_input, 
+                report_output=all_omark_stats
+            )
+            map_stat_to_report(
+                mapping_section=mapping_configs.omark_key_mappings, 
+                stat_input=all_omark_input["results_pcts"],
+                report_output=all_omark_stats
+            )
             key_omark_stats.update(all_omark_stats)
-            for reporting_field, omark_field in omark_consistency_mappings.items():
-                all_omark_stats[reporting_field] = omark_consistency[omark_field]
-            for reporting_field, omark_field in omark_conserved_hog_mappings.items():
-                all_omark_stats[reporting_field] = omark_hogs[omark_field]
+            map_stat_to_report(
+                mapping_section=mapping_configs.omark_consistency_mappings, 
+                stat_input=all_omark_input["results_pcts"],
+                report_output=all_omark_stats
+            )
+            map_stat_to_report(
+                mapping_section=mapping_configs.omark_conserved_hog_mappings, 
+                stat_input=all_omark_input["conserv_pcts"],
+                report_output=all_omark_stats
+            )
             for spp in range(len(omark_spp)):
                 if "Clade" in (omark_spp[spp]):
                     all_omark_stats["detected_sp"].append(omark_spp[spp])
-                elif "Potential_contaminants" in (omark_spp[spp]):
+                else:
+                    all_omark_stats["detected_sp"].append(None)
+                if "Potential_contaminants" in (omark_spp[spp]):
                     all_omark_stats["contaminant_sp"].append(omark_spp[spp])
-        for key, value in omark_key_mappings.items():
-            if key not in all_omark_stats.keys():
-                all_omark_stats[key] = "N/A"
-        for key, value in omark_info_mappings.items():
-            if key not in all_omark_stats.keys():
-                all_omark_stats[key] = "N/A"
-        for key, value in omark_conserved_hog_mappings.items():
-            if key not in all_omark_stats.keys():
-                all_omark_stats[key] = "N/A"
-        for key, value in omark_consistency_mappings.items():
-            if key not in all_omark_stats.keys():
-                all_omark_stats[key] = "N/A"
-        if all_omark_stats["detected_sp"] == []:
-            all_omark_stats["detected_sp"].append("N/A")
-        if all_omark_stats["contaminant_sp"] == []:
-            all_omark_stats["contaminant_sp"].append("N/A")
+                else:
+                    all_omark_stats["contaminant_sp"].append(None)
         stats_for_gnl.update(key_omark_stats)
     else:
         print("No OMArk file specified")
@@ -385,33 +331,10 @@ def main():
 
     all_oddities = {}
     if args.annooddities_file is not None:
-        path_to_oddities = args.annooddities_file
-        # define mappings from annooddity output
-        oddity_mappings = {
-            "single_exon_transcripts": "exon_num == 1",
-            "multi_exon_transcripts": "exon_num > 1",
-            "five_utr_above_10000bp": "five_utr_length > 10000",
-            "five_utr_num_above_5": "five_utr_num > 5",
-            "three_utr_above_10000bp": "three_utr_length > 10000",
-            "three_utr_num_above_4": "three_utr_num > 4",
-            "incomplete_transcripts": "not is_complete",
-            "missing_start_codon": "not has_start_codon",
-            "missing_stop_codon": "not has_stop_codon",
-            "fragmented": "is_fragment",
-            "has_inframe_stop_codons": "has_inframe_stop",
-            "max_exon_above_10000bp": "max_exon_length > 10000",
-            "max_intron_above_120000bp": "max_intron_length > 120000",
-            "min_exon_below_5bp": "min_exon_length <= 5",
-            "min_intron_bw_0_and_5bp": "0 < min_intron_length <= 5",
-            "cds_fraction_below_30pc": "selected_cds_fraction <= 0.3",
-            "has_non_canonical_introns": "canonical_intron_proportion != 1",
-            "only_non_canonical_splicing": "only_non_canonical_splicing",
-            "has_suspicious_splicing": "suspicious_splicing",
-        }
         all_oddities["annooddities_input_provided"] = True
         # parse the annooddity summary file
         print("Parsing AnnoOddities file")
-        with open(path_to_oddities, "rt") as f:
+        with open(args.annooddities_file, "rt") as f:
             oddity_table = csv.reader(f, delimiter="\t")
             next(oddity_table)  # take out the header
             oddity_dict = {}
@@ -419,15 +342,17 @@ def main():
                 key = row[0]
                 value = int(row[1])
                 oddity_dict[key] = value
-            for reporting_field, oddity_field in oddity_mappings.items():
-                all_oddities[reporting_field] = oddity_dict[oddity_field]
-        for key, value in oddity_mappings.items():
-            if key not in all_oddities.keys():
-                all_oddities[key] = "N/A"
+            map_stat_to_report(
+                mapping_section=mapping_configs.oddity_mappings, 
+                stat_input=oddity_dict,
+                report_output=all_oddities
+            )
     else:
         print("No AnnoOddities file specified")
         all_oddities["annooddities_input_provided"] = False
     oddity_output = {"annooddities": all_oddities}
+
+    print(oddity_output)
 
     with open(args.json_atol, "w", encoding="utf-8") as f:
         output_for_gnl = {"annotation": stats_for_gnl}
@@ -449,7 +374,7 @@ def main():
 
     # this could be a function?
     typst.compile(
-        input=path_to_template, output=args.output_file, sys_inputs=full_results
+        input=args.template_file, output=args.output_file, sys_inputs=full_results
     )
 
     # logger?
