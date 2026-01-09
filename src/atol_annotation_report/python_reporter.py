@@ -127,17 +127,16 @@ def convert_null_values(full_report):
     return converted_report
 
 def replace_nulls(report_in_prep):
-    prepared_report = report_in_prep
-    for key, value in prepared_report.items():
+    for key, value in report_in_prep.items():
         if isinstance(value, dict):
             replace_nulls(value)
         elif value is None:
-            prepared_report[key] = "N/A"
+            report_in_prep[key] = "N/A"
         elif isinstance(value, list) and None in value:
-            prepared_report[key] = ["N/A"]
+            report_in_prep[key] = ["N/A"]
         else:
-            prepared_report[key] = value
-    return prepared_report
+            report_in_prep[key] = value
+    return report_in_prep
 
 # function to populate template
 def populate_template(template, input_data, output_path):
