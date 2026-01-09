@@ -17,6 +17,7 @@ import argparse
 import json
 import typst
 import yaml
+import csv
 from atol_annotation_report import mapping_configs
 
 def parse_arguments():
@@ -96,27 +97,53 @@ def parse_arguments():
 
     return args
 
+# new functions for mapping
+def map_stat_to_report(mapping_section, stat_input, report_output):
+    for report_field, stat_field in mapping_section.items():
+        if stat_field in stat_input:
+            report_output[report_field] = stat_input[stat_field]
+        else:
+            report_output[report_field] = None
+
+def map_one_to_many(one_to_many_maps, stat_input, report_output, report_field):
+    for stat_field, stat_value in stat_input.items():
+        if stat_field in one_to_many_maps:
+            report_output[report_field] = stat_value
+            return report_output
+        else:
+            report_output[report_field] = None
+
+# function to write stats to json
+def write_data(json_stats_input, file_path):
+    with open(file_path, "w",  encoding="utf-8") as f:
+        json.dump(json_stats_input, f)
+
+# function to convert None values to string for rendering by typst
+def convert_null_values(full_report):
+    prepared_report = full_report
+    for key, value in prepared_report.items():
+        if isinstance(value, dict):
+            convert_null_values(value)
+        elif value is None:
+            prepared_report[key] = "N/A"
+        elif isinstance(value, list) and None in value:
+            prepared_report[key] = ["N/A"]
+        else:
+            prepared_report[key] = value
+    return prepared_report
+
+def populate_template(template, input_data, output_path):
+    typst.compile(
+        input=template,
+        output=output_path,
+        sys_inputs=input_data
+    )
+
 # Possibly break main up into sub-functions, e.g. one for the BUSCO file, one
 # for the OMArk, etc. If you repeat code, it should be a function. (not always
 # possible!)
 def main():
     args = parse_arguments()
-
-    # could be an arg with a default
-    # path_to_template = Path(files(), "resources", "full_report_template.typ")
-
-    # writing new functions for mapping
-    def map_stat_to_report(mapping_section, stat_input, report_output):
-        for report_field, stat_field in mapping_section.items():
-            if stat_field in stat_input:
-                report_output[report_field] = stat_input[stat_field]
-            else:
-                report_output[report_field] = None
-
-    def map_one_to_many(one_to_many_maps, stat_input, report_output, report_field):
-        for stat_field, stat_value in stat_input.items():
-            if stat_field in one_to_many_maps:
-                report_output[report_field] = stat_value
 
     # this dictionary will contain a json "annotation" object which can be inserted into the atol genome-note-lite input.
     stats_for_gnl = {}
@@ -127,9 +154,9 @@ def main():
         print("Parsing metadata") # could use a logger (see https://github.com/TomHarrop/atol-bpa-datamapper/blob/main/src/atol_bpa_datamapper/logger.py)
         with open(args.metadata_file, "rt") as f:
             metadata_input = json.load(f)
-            for dict in metadata_input:
-                key = dict["meta_key"]
-                value = dict["meta_value"]
+            for dictionary in metadata_input:
+                key = dictionary["meta_key"]
+                value = dictionary["meta_value"]
                 all_metadata[key] = value
     else:
         print("No metadata file specified")
@@ -190,8 +217,6 @@ def main():
             else:
                 print("error: no transcript or mRNA stats detected in AGAT yaml file")
             all_agat_stats.update(key_agat_stats)
-            # The for blocks might be a candidate for a function (e.g. a
-            # mapping function e.g. def map_value(field, value):)
             map_stat_to_report(mapping_section=mapping_configs.key_agat_mappings, stat_input=agat_stats_input, report_output=key_agat_stats)
             for mapping_sect in [
                 mapping_configs.key_agat_mappings,
@@ -202,7 +227,10 @@ def main():
                 mapping_configs.long_short_agat_mappings,
                 mapping_configs.length_agat_mappings
             ]:
-                map_stat_to_report(mapping_section=mapping_sect, stat_input=agat_stats_input, report_output=all_agat_stats)
+                map_stat_to_report(
+                    mapping_section=mapping_sect, 
+                    stat_input=agat_stats_input, 
+                    report_output=all_agat_stats)
         stats_for_gnl.update(key_agat_stats)
     else:
         print("No AGAT file specified")
@@ -239,8 +267,6 @@ def main():
                 stat_input=all_busco_input["results"], 
                 report_output=all_busco_stats
             )
-            # In general, it's nice to avoid hard-coding... might be
-            # difficult here?
             map_one_to_many(
                 one_to_many_maps=mapping_configs.busco_complete_pct,
                 stat_input=all_busco_input["results"],
@@ -352,29 +378,26 @@ def main():
         all_oddities["annooddities_input_provided"] = False
     oddity_output = {"annooddities": all_oddities}
 
-    print(oddity_output)
-
-    with open(args.json_atol, "w", encoding="utf-8") as f:
-        output_for_gnl = {"annotation": stats_for_gnl}
-        json.dump(output_for_gnl, f)
-
     print("Combining statistics and writing to JSON")
     combined_stats = (
         all_metadata | agat_output | busco_output | omark_output | oddity_output
     )
 
-    # this could be a function? write_data(combined_stats, file_path)
-    with open(args.json_full, "w", encoding="utf-8") as f:
-        json.dump(combined_stats, f)
+    # format genome note lite dictionary as 'annotation' object
+    output_for_gnl = {"annotation": stats_for_gnl}
 
-    # populate typst template with json dataa
-    full_results = {"full_results": json.dumps(combined_stats)}
+    write_data(json_stats_input=output_for_gnl, file_path=args.json_atol)
+    write_data(json_stats_input=combined_stats, file_path=args.json_full)
+
+    # populate typst template with json data
+    full_results = {"full_results": json.dumps(convert_null_values(combined_stats))}
 
     print("Rendering typst template")
 
-    # this could be a function?
-    typst.compile(
-        input=args.template_file, output=args.output_file, sys_inputs=full_results
+    populate_template(
+        template=args.template_file,
+        input_data=full_results,
+        output_path=args.output_file
     )
 
     # logger?
@@ -385,7 +408,6 @@ def main():
         + str(args.json_full)
         + ")"
     )
-
 
 if __name__ == "__main__":
     main()
