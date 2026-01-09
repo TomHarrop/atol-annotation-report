@@ -120,12 +120,17 @@ def write_data(json_stats_input, file_path):
     with open(file_path, "w",  encoding="utf-8") as f:
         json.dump(json_stats_input, f)
 
-# function to convert None values to string for rendering by typst
+# functions to convert None values to string for rendering by typst
 def convert_null_values(full_report):
-    prepared_report = full_report
+    report_in_prep = full_report.copy()
+    converted_report = replace_nulls(report_in_prep)
+    return converted_report
+
+def replace_nulls(report_in_prep):
+    prepared_report = report_in_prep
     for key, value in prepared_report.items():
         if isinstance(value, dict):
-            convert_null_values(value)
+            replace_nulls(value)
         elif value is None:
             prepared_report[key] = "N/A"
         elif isinstance(value, list) and None in value:
@@ -134,6 +139,7 @@ def convert_null_values(full_report):
             prepared_report[key] = value
     return prepared_report
 
+# function to populate template
 def populate_template(template, input_data, output_path):
     typst.compile(
         input=template,
