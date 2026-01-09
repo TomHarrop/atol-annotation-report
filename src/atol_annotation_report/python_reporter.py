@@ -18,6 +18,8 @@ import json
 import typst
 import yaml
 import csv
+import logging
+import sys
 from atol_annotation_report import mapping_configs
 
 def parse_arguments():
@@ -145,13 +147,20 @@ def populate_template(template, input_data, output_path):
 def main():
     args = parse_arguments()
 
+    logging.basicConfig(
+        stream=sys.stderr,
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    logger = logging.getLogger()
+
     # this dictionary will contain a json "annotation" object which can be inserted into the atol genome-note-lite input.
     stats_for_gnl = {}
 
     all_metadata = {}
     if args.metadata_file is not None:
         all_metadata["metadata_input_provided"] = True
-        print("Parsing metadata") # could use a logger (see https://github.com/TomHarrop/atol-bpa-datamapper/blob/main/src/atol_bpa_datamapper/logger.py)
+        logger.info("Parsing metadata")
         with open(args.metadata_file, "rt") as f:
             metadata_input = json.load(f)
             for dictionary in metadata_input:
@@ -159,7 +168,7 @@ def main():
                 value = dictionary["meta_value"]
                 all_metadata[key] = value
     else:
-        print("No metadata file specified")
+        logger.info("No metadata file specified")
         all_metadata["metadata_input_provided"] = False
 
     # An alternative to storing configs here, is to add them to a module (e.g.
@@ -173,7 +182,7 @@ def main():
         # TODO: parse and map AGAT software version and add to key_agat_mappings
         # parse AGAT yaml and map to new field names
         all_agat_stats["agat_input_provided"] = True
-        print("Parsing AGAT file")
+        logger.info("Parsing AGAT file")
         with open(args.agat_file, "rt") as f:
             key_agat_stats = {}
             full_agat_input = yaml.load(f, Loader=yaml.SafeLoader)
@@ -187,7 +196,7 @@ def main():
                 elif "without_isoform" in transcript_stats:
                     agat_stats_input = transcript_stats["without_isoform"]["value"]
                 else:
-                    print(
+                    logger.info(
                         "AGAT stats for transcripts without isoform not found, looking for stats for mRNAs"
                     )
                 '''
@@ -213,9 +222,9 @@ def main():
                 elif "without_isoform" in mrna_stats:
                     agat_stats_input = mrna_stats["without_isoform"]["value"]
                 else:
-                    print("AGAT stats mRNAs without isoform stats not found")
+                    logger.info("AGAT stats for mRNAs without isoform stats not found")
             else:
-                print("error: no transcript or mRNA stats detected in AGAT yaml file")
+                logger.warning("no transcript or mRNA stats detected in AGAT yaml file")
             all_agat_stats.update(key_agat_stats)
             map_stat_to_report(mapping_section=mapping_configs.key_agat_mappings, stat_input=agat_stats_input, report_output=key_agat_stats)
             for mapping_sect in [
@@ -233,7 +242,7 @@ def main():
                     report_output=all_agat_stats)
         stats_for_gnl.update(key_agat_stats)
     else:
-        print("No AGAT file specified")
+        logger.info("No AGAT file specified")
         all_agat_stats["agat_input_provided"] = False
     agat_output = {"agat": all_agat_stats}
 
@@ -243,7 +252,7 @@ def main():
     if args.busco_file is not None:
         all_busco_stats["busco_input_provided"] = True
         # parse BUSCO json and map to new field names
-        print("Parsing BUSCO file")
+        logger.info("Parsing BUSCO file")
         with open(args.busco_file, "rt") as f:
             key_busco_stats = {}
             all_busco_input = json.load(f)
@@ -304,7 +313,7 @@ def main():
             )
         stats_for_gnl.update(key_busco_stats)
     else:
-        print("No BUSCO file specified")
+        logger.info("No BUSCO file specified")
         all_busco_stats["busco_input_provided"] = False
     busco_output = {"busco": all_busco_stats}
 
@@ -312,7 +321,7 @@ def main():
     if args.omark_file is not None:
         all_omark_stats["omark_input_provided"] = True
         # parse OMArk file and map to new field names
-        print("Parsing OMArk file")
+        logger.info("Parsing OMArk file")
         with open(args.omark_file, "rt") as f:
             key_omark_stats = {}
             all_omark_stats["detected_sp"] = []
@@ -351,7 +360,7 @@ def main():
                     all_omark_stats["contaminant_sp"].append(None)
         stats_for_gnl.update(key_omark_stats)
     else:
-        print("No OMArk file specified")
+        logger.info("No OMArk file specified")
         all_omark_stats["omark_input_provided"] = False
     omark_output = {"omark": all_omark_stats}
 
@@ -359,7 +368,7 @@ def main():
     if args.annooddities_file is not None:
         all_oddities["annooddities_input_provided"] = True
         # parse the annooddity summary file
-        print("Parsing AnnoOddities file")
+        logger.info("Parsing AnnoOddities file")
         with open(args.annooddities_file, "rt") as f:
             oddity_table = csv.reader(f, delimiter="\t")
             next(oddity_table)  # take out the header
@@ -374,11 +383,12 @@ def main():
                 report_output=all_oddities
             )
     else:
-        print("No AnnoOddities file specified")
+        logger.info("No AnnoOddities file specified")
         all_oddities["annooddities_input_provided"] = False
     oddity_output = {"annooddities": all_oddities}
 
-    print("Combining statistics and writing to JSON")
+    logger.info("Combining statistics and writing to JSON")
+
     combined_stats = (
         all_metadata | agat_output | busco_output | omark_output | oddity_output
     )
@@ -392,7 +402,7 @@ def main():
     # populate typst template with json data
     full_results = {"full_results": json.dumps(convert_null_values(combined_stats))}
 
-    print("Rendering typst template")
+    logger.info("Rendering typst template")
 
     populate_template(
         template=args.template_file,
@@ -400,8 +410,7 @@ def main():
         output_path=args.output_file
     )
 
-    # logger?
-    print(
+    logger.info(
         "AToL Annotation Report Tool completed. Report available as PDF ("
         + str(args.output_file)
         + ") and JSON ("
