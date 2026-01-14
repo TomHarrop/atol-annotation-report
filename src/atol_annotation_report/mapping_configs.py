@@ -149,38 +149,25 @@ oddity_mappings = {
 
 # busco mappings for different versions
 
-busco_complete_pct = [
-    "Complete percentage", 
-    "Complete"
-]
-busco_single_pct = [
-    "Single copy percentage", 
-    "Single copy"
-]
-busco_multi_pct = [
-    "Multi copy percentage",
-    "Multi copy"
-]
-busco_frag_pct = [
-    "Fragmented percentage",
-    "Fragmented"
-]
-busco_missing_pct = [
-    "Missing percentage",
-    "Missing"
-]
-
-# pseudocode (doesn't work)
-# if key in busco.mapping.field:
-#     field = value
-busco = {
-    "mappings": {
-        "complete_pct" : [
-            "Complete",
-            "complete",
-            "complete pct",
-            "Complete %"
-
-        ]
-    }
+busco_val_mappings = {
+    "complete_percent": [
+        "Complete percentage", 
+        "Complete"
+    ],
+    "single_copy_percent": [
+        "Single copy percentage", 
+        "Single copy"
+    ],
+    "duplicated_percent": [
+        "Multi copy percentage",
+        "Multi copy"
+    ],
+    "fragmented_percent": [
+        "Fragmented percentage",
+        "Fragmented"
+    ],
+    "missing_percent": [
+        "Missing percentage",
+        "Missing"
+    ]
 }

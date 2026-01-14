@@ -107,13 +107,15 @@ def map_stat_to_report(mapping_section, stat_input, report_output):
         else:
             report_output[report_field] = None
 
-def map_one_to_many(one_to_many_maps, stat_input, report_output, report_field):
-    for stat_field, stat_value in stat_input.items():
-        if stat_field in one_to_many_maps:
-            report_output[report_field] = stat_value
-            return report_output
-        else:
-            report_output[report_field] = None
+def map_one_to_many(stat_input, report_output, mapping_section):
+    for report_field, mapped_vals in mapping_section.items():
+        for stat_field, stat_value in stat_input.items():
+            if stat_field in mapped_vals:
+                report_output[report_field] = stat_value
+            elif report_field in report_output.keys():
+                pass
+            else:
+                report_output[report_field] = None
 
 # function to write stats to json
 def write_data(json_stats_input, file_path):
@@ -282,34 +284,9 @@ def main():
                 report_output=all_busco_stats
             )
             map_one_to_many(
-                one_to_many_maps=mapping_configs.busco_complete_pct,
                 stat_input=all_busco_input["results"],
                 report_output=all_busco_stats,
-                report_field="complete_percent"
-            )
-            map_one_to_many(
-                one_to_many_maps=mapping_configs.busco_single_pct,
-                stat_input=all_busco_input["results"],
-                report_output=all_busco_stats,
-                report_field="single_copy_percent"
-            )
-            map_one_to_many(
-                one_to_many_maps=mapping_configs.busco_multi_pct,
-                stat_input=all_busco_input["results"],
-                report_output=all_busco_stats,
-                report_field="duplicated_percent"
-            )
-            map_one_to_many(
-                one_to_many_maps=mapping_configs.busco_frag_pct,
-                stat_input=all_busco_input["results"],
-                report_output=all_busco_stats,
-                report_field="fragmented_percent"
-            )
-            map_one_to_many(
-                one_to_many_maps=mapping_configs.busco_missing_pct,
-                stat_input=all_busco_input["results"],
-                report_output=all_busco_stats,
-                report_field="missing_percent"
+                mapping_section=mapping_configs.busco_val_mappings
             )
             map_stat_to_report(
                 mapping_section=mapping_configs.key_busco_mappings, 
@@ -329,21 +306,21 @@ def main():
         logger.info("Parsing OMArk file")
         with open(args.omark_file, "rt") as f:
             key_omark_stats = {}
-            all_omark_stats["detected_sp"] = []
-            all_omark_stats["contaminant_sp"] = []
+            key_omark_stats["detected_sp"] = []
+            key_omark_stats["contaminant_sp"] = []
             all_omark_input = json.load(f)
             omark_spp = all_omark_input["detected_species"]
             map_stat_to_report(
                 mapping_section=mapping_configs.omark_info_mappings, 
                 stat_input=all_omark_input, 
-                report_output=all_omark_stats
+                report_output=key_omark_stats
             )
             map_stat_to_report(
                 mapping_section=mapping_configs.omark_key_mappings, 
                 stat_input=all_omark_input["results_pcts"],
-                report_output=all_omark_stats
+                report_output=key_omark_stats
             )
-            key_omark_stats.update(all_omark_stats)
+            all_omark_stats.update(key_omark_stats)
             map_stat_to_report(
                 mapping_section=mapping_configs.omark_consistency_mappings, 
                 stat_input=all_omark_input["results_pcts"],
