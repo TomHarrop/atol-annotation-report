@@ -22,6 +22,13 @@ import logging
 import sys
 from atol_annotation_report import mapping_configs
 
+logging.basicConfig(
+    stream=sys.stderr,
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger()
+
 def parse_arguments():
 
     argument_parser = argparse.ArgumentParser(
@@ -142,24 +149,21 @@ def replace_nulls(report_in_prep):
 
 # function to populate template
 def populate_template(template, input_data, output_path):
-    typst.compile(
-        input=template,
-        output=output_path,
-        sys_inputs=input_data
-    )
+    try: 
+        typst.compile(
+            input=template,
+            output=output_path,
+            sys_inputs=input_data
+        )
+    except typst.TypstError as e:
+        logger.critical("typst compilation failed")
+        raise e
 
 # Possibly break main up into sub-functions, e.g. one for the BUSCO file, one
 # for the OMArk, etc. If you repeat code, it should be a function. (not always
 # possible!)
 def main():
     args = parse_arguments()
-
-    logging.basicConfig(
-        stream=sys.stderr,
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    logger = logging.getLogger()
 
     # this dictionary will contain a json "annotation" object which can be inserted into the atol genome-note-lite input.
     stats_for_gnl = {}
@@ -178,14 +182,8 @@ def main():
         logger.info("No metadata file specified")
         all_metadata["metadata_input_provided"] = False
 
-    # An alternative to storing configs here, is to add them to a module (e.g.
-    # mapping_configs.py) and import them like this: `import mapping_configs`.
-    # You can then use them as e.g. `mapping_configs.key_agat_mappings`. We
-    # might also need to add the config file to the pyproject.toml.
-
     all_agat_stats = {}
     if args.agat_file is not None:
-        # define mappings from agat yaml input to annotation schema fields
         # TODO: parse and map AGAT software version and add to key_agat_mappings
         # parse AGAT yaml and map to new field names
         all_agat_stats["agat_input_provided"] = True
@@ -206,19 +204,6 @@ def main():
                     logger.info(
                         "AGAT stats for transcripts without isoform not found, looking for stats for mRNAs"
                     )
-                '''
-                # for the fun of it, with error handling (another way of
-                # expressing the same thing).
-                try:
-                    agat_stats_input = transcript_stats["without_isoforms"]["value"]
-                except KeyError as e:
-                    logger.warning(
-                        "AGAT stats for transcripts without isoform not found, looking for stats for mRNAs"
-                    )
-                    # Do some custom error handling, e.g.
-                    # logger.error("You must supply a without_isoforms section")
-                    # raise e
-                    '''
             elif "mrna" in full_agat_input:
                 mrna_stats = full_agat_input["mrna"]
                 key_agat_stats["feature_stats_calculated_for"] = (
