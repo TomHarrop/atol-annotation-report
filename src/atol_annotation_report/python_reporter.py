@@ -319,12 +319,12 @@ def main():
             for spp in range(len(omark_spp)):
                 if "Clade" in (omark_spp[spp]):
                     all_omark_stats["detected_sp"].append(omark_spp[spp])
-                else:
-                    all_omark_stats["detected_sp"].append(None)
-                if "Potential_contaminants" in (omark_spp[spp]):
+                elif "Potential_contaminants" in (omark_spp[spp]):
                     all_omark_stats["contaminant_sp"].append(omark_spp[spp])
-                else:
-                    all_omark_stats["contaminant_sp"].append(None)
+            if all_omark_stats["detected_sp"] == []:
+                all_omark_stats["detected_sp"].append(None)
+            if all_omark_stats["contaminant_sp"] == []:
+                all_omark_stats["contaminant_sp"].append(None)
         stats_for_gnl.update(key_omark_stats)
     else:
         logger.info("No OMArk file specified")
