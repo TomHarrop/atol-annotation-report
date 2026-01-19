@@ -130,34 +130,8 @@ def map_agat(agat_arg, all_agat_stats, gnl_stats):
         all_agat_stats["agat_input_provided"] = True
         logger.info("Parsing AGAT file")
         with open(agat_arg, "rt") as f:
-            key_agat_stats = {}
             full_agat_input = yaml.load(f, Loader=yaml.SafeLoader)
-            if "transcript" in full_agat_input:
-                transcript_stats = full_agat_input["transcript"]
-                key_agat_stats["feature_stats_calculated_for"] = (
-                    "transcripts (without isoforms)"
-                )
-                if "without_isoforms" in transcript_stats:
-                    agat_stats_input = transcript_stats["without_isoforms"]["value"]
-                elif "without_isoform" in transcript_stats:
-                    agat_stats_input = transcript_stats["without_isoform"]["value"]
-                else:
-                    logger.info(
-                        "AGAT stats for transcripts without isoform not found, looking for stats for mRNAs"
-                    )
-            elif "mrna" in full_agat_input:
-                mrna_stats = full_agat_input["mrna"]
-                key_agat_stats["feature_stats_calculated_for"] = (
-                    "mRNAs (without isoforms)"
-                )
-                if "without_isoforms" in mrna_stats:
-                    agat_stats_input = mrna_stats["without_isoforms"]["value"]
-                elif "without_isoform" in mrna_stats:
-                    agat_stats_input = mrna_stats["without_isoform"]["value"]
-                else:
-                    logger.info("AGAT stats for mRNAs without isoform stats not found")
-            else:
-                logger.warning("no transcript or mRNA stats detected in AGAT yaml file")
+            agat_stats_input, key_agat_stats = detect_agat_feature_type(full_agat_input=full_agat_input, key_stats_iniatiliser={})
             all_agat_stats.update(key_agat_stats)
             map_stat_to_report(mapping_section=mapping_configs.key_agat_mappings, stat_input=agat_stats_input, report_output=key_agat_stats)
             for mapping_sect in [
@@ -298,6 +272,37 @@ def map_annooddities(oddity_arg, all_oddities):
     return oddity_output
 
 # lower-level functions for mapping
+
+def detect_agat_feature_type(full_agat_input, key_stats_iniatiliser):
+    '''determine whether transcripts or mrnas were the main annotated element in the annotation file'''
+    if "transcript" in full_agat_input: 
+        transcript_stats = full_agat_input["transcript"]
+        key_stats_iniatiliser["feature_stats_calculated_for"] = (
+            "transcripts (without isoforms)"
+        )
+        if "without_isoforms" in transcript_stats:
+            agat_stats_input = transcript_stats["without_isoforms"]["value"]
+        elif "without_isoform" in transcript_stats:
+            agat_stats_input = transcript_stats["without_isoform"]["value"]
+        else:
+            logger.info(
+                "AGAT stats for transcripts without isoform not found, looking for stats for mRNAs"
+            )
+    elif "mrna" in full_agat_input:
+        mrna_stats = full_agat_input["mrna"]
+        key_stats_iniatiliser["feature_stats_calculated_for"] = (
+            "mRNAs (without isoforms)"
+        )
+        if "without_isoforms" in mrna_stats:
+            agat_stats_input = mrna_stats["without_isoforms"]["value"]
+        elif "without_isoform" in mrna_stats:
+            agat_stats_input = mrna_stats["without_isoform"]["value"]
+        else:
+            logger.info("AGAT stats for mRNAs without isoform stats not found")
+    else:
+        logger.warning("no transcript or mRNA stats detected in AGAT yaml file")
+    return agat_stats_input, key_stats_iniatiliser
+
 def map_stat_to_report(mapping_section, stat_input, report_output):
     for report_field, stat_field in mapping_section.items():
         if stat_field in stat_input:
