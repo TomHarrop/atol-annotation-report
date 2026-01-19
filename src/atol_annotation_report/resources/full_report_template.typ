@@ -161,10 +161,10 @@
   #table(
     columns: (25%, auto),
     stroke: none,
-    [*Gene:*], [#calc.round(rep.agat.mean_gene_length, digits: 2)],
+    [*Gene:*], [#if rep.agat.mean_gene_length != "N/A" [#calc.round(rep.agat.mean_gene_length, digits: 2)] else [#rep.agat.mean_gene_length]],
     [#if rep.agat.mean_mrna_length != "N/A" [*mRNA:*] else [*Transcript:*]], [#if rep.agat.mean_mrna_length != "N/A" [#calc.round(rep.agat.mean_mrna_length, digits: 2)] else if rep.agat.mean_transcript_length != "N/A" [#calc.round(rep.agat.mean_transcript_length, digits: 2)] else [N/A]],
-    [*Exon:*], [#calc.round(rep.agat.mean_exon_length, digits: 2)],
-    [*CDS:*], [#calc.round(rep.agat.mean_cds_length, digits: 2)],
+    [*Exon:*], [#if rep.agat.mean_exon_length != "N/A" [#calc.round(rep.agat.mean_exon_length, digits: 2)], else [rep.agat.mean_exon_length]],
+    [*CDS:*], [#if rep.agat.mean_cds_length != "N/A" [#calc.round(rep.agat.mean_cds_length, digits: 2)] else [rep.agat.mean_cds_length]],
     [*Intron:*], [#if rep.agat.mean_intron_length != "N/A" [#calc.round(rep.agat.mean_intron_length, digits: 2)] else [#rep.agat.mean_intron_length]],
   )
 
@@ -174,10 +174,10 @@
   #table(
     columns: (25%, auto),
     stroke: none,
-    [*Gene:*], [#calc.round(rep.agat.median_gene_length, digits: 2)],
+    [*Gene:*], [#if rep.agat.median_gene_length != "N/A" [calc.round(rep.agat.median_gene_length, digits: 2)] else [rep.agat.median_gene_length]],
     [#if rep.agat.median_mrna_length != "N/A" [*mRNA:*] else [*Transcript:*]], [#if rep.agat.median_mrna_length != "N/A" [#calc.round(rep.agat.median_mrna_length, digits: 2)] else if rep.agat.median_transcript_length != "N/A" [#calc.round(rep.agat.median_transcript_length, digits: 2)] else [N/A]],
-    [*Exon:*], [#calc.round(rep.agat.median_exon_length, digits: 2)],
-    [*CDS:*], [#calc.round(rep.agat.median_cds_length, digits: 2)],
+    [*Exon:*], [#if rep.agat.median_exon_length != "N/A" [#calc.round(rep.agat.median_exon_length, digits: 2)] else [rep.agat.median_exon_length]],
+    [*CDS:*], [#if rep.agat.median_cds_length != "N/A" [#calc.round(rep.agat.median_cds_length, digits: 2)] else [rep.agat.median_cds_length]],
     [*Intron:*], [#if rep.agat.median_intron_length != "N/A" [#calc.round(rep.agat.median_intron_length, digits: 2)] else [#rep.agat.median_intron_length]],
   )
 
