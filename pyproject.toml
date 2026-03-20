@@ -6,6 +6,12 @@ build-backend = "setuptools.build_meta"
 name = "atol-annotation-report"
 dynamic = ["version"]
 dependencies = ["pyyaml>=6.0.3", "typst>=0.14.4"]
+authors = [
+    { name = "Amy Tims", email = "amy.tims@unimelb.edu.au" },
+    { name = "Emily Marshall", email = "emily@biocommons.org.au" },
+    { name = "Keeva Connolly", email = "keeva.connolly@qcif.edu.au" },
+    { name = "Tom Harrop", email = "tharrop@unimelb.edu.au" },
+]
 
 [project.scripts]
 atol-annotation-report = "atol_annotation_report.python_reporter:main"
